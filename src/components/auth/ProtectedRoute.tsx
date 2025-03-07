@@ -10,14 +10,20 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate('/login');
+      // Check both localStorage and sessionStorage for user data
+      const localStorageUser = localStorage.getItem('exploit_user');
+      const sessionStorageUser = sessionStorage.getItem('exploit_user');
+      
+      if (!localStorageUser && !sessionStorageUser) {
+        navigate('/login');
+      }
     }
   }, [user, isLoading, navigate]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-md space-y-4">
+        <div className="w-full max-w-md space-y-4 animate-pulse">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-12 w-full" />

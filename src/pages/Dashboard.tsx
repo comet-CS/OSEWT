@@ -5,11 +5,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Code, BookOpen, Settings, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Download, Code, BookOpen, Settings, AlertCircle, Search, Star } from 'lucide-react';
+import ScriptCard from '@/components/scripts/ScriptCard';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, scripts } = useAuth();
+  const navigate = useNavigate();
   const [downloadStarted, setDownloadStarted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleDownload = () => {
     setDownloadStarted(true);
@@ -19,9 +24,21 @@ const Dashboard = () => {
     }, 2000);
   };
 
+  const filteredScripts = scripts.filter(script => 
+    script.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    script.game.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    script.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const favoriteScripts = scripts.filter(script => script.isFavorite);
+
+  const viewScript = (scriptId: string) => {
+    navigate(`/scripts/${scriptId}`);
+  };
+
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 animate-fade-in">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Welcome, {user?.username}</h1>
@@ -30,7 +47,7 @@ const Dashboard = () => {
             </p>
           </div>
           <Button 
-            className="exploit-button mt-4 md:mt-0"
+            className="exploit-button mt-4 md:mt-0 transition-all duration-300 hover:scale-[1.02]"
             onClick={handleDownload}
             disabled={downloadStarted}
           >
@@ -49,14 +66,14 @@ const Dashboard = () => {
 
           <TabsContent value="dashboard" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="exploit-card">
+              <Card className="exploit-card hover-scale">
                 <CardHeader>
                   <CardTitle>Exploit Status</CardTitle>
                   <CardDescription>Current status of our exploit</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500 pulse"></div>
                     <span className="font-medium">Online and Working</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
@@ -65,7 +82,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="exploit-card">
+              <Card className="exploit-card hover-scale">
                 <CardHeader>
                   <CardTitle>Account Level</CardTitle>
                   <CardDescription>Your current membership</CardDescription>
@@ -78,7 +95,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="exploit-card">
+              <Card className="exploit-card hover-scale">
                 <CardHeader>
                   <CardTitle>Announcement</CardTitle>
                   <CardDescription>Latest news</CardDescription>
@@ -91,6 +108,27 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {favoriteScripts.length > 0 && (
+              <Card className="exploit-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Star className="h-5 w-5 mr-2 text-yellow-400 fill-yellow-400" />
+                    Favorite Scripts
+                  </CardTitle>
+                  <CardDescription>
+                    Your saved scripts for quick access
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favoriteScripts.map(script => (
+                      <ScriptCard key={script.id} script={script} compact />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="exploit-card">
               <CardHeader>
@@ -132,23 +170,36 @@ const Dashboard = () => {
 
           <TabsContent value="scripts" className="space-y-6">
             <Card className="exploit-card">
-              <CardHeader>
-                <CardTitle>Popular Scripts</CardTitle>
-                <CardDescription>
-                  Ready-to-use scripts for popular games
-                </CardDescription>
+              <CardHeader className="pb-2">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div>
+                    <CardTitle>Script Library</CardTitle>
+                    <CardDescription>Browse and use ready-made scripts</CardDescription>
+                  </div>
+                  <div className="w-full md:w-64 mt-4 md:mt-0">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input 
+                        placeholder="Search scripts..." 
+                        className="pl-10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {['Adopt Me', 'Blox Fruits', 'Jailbreak', 'Phantom Forces', 'Arsenal'].map((game) => (
-                    <div key={game} className="flex justify-between items-center p-3 bg-card/60 rounded-md hover:bg-card transition">
-                      <span>{game}</span>
-                      <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10">
-                        <Code className="h-4 w-4 mr-1" />
-                        View Scripts
-                      </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredScripts.length > 0 ? (
+                    filteredScripts.map((script) => (
+                      <ScriptCard key={script.id} script={script} />
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8 text-muted-foreground">
+                      No scripts found matching your search.
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -165,9 +216,9 @@ const Dashboard = () => {
               <CardContent>
                 <div className="space-y-4">
                   {['Beginner\'s Guide', 'Script Writing Basics', 'Advanced Techniques', 'Troubleshooting', 'Game-Specific Tips'].map((tutorial) => (
-                    <div key={tutorial} className="flex justify-between items-center p-3 bg-card/60 rounded-md hover:bg-card transition">
+                    <div key={tutorial} className="flex justify-between items-center p-3 bg-card/60 rounded-md hover:bg-card transition-all duration-200 hover:translate-x-1">
                       <span>{tutorial}</span>
-                      <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10">
+                      <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10 transition-colors duration-200">
                         <BookOpen className="h-4 w-4 mr-1" />
                         Read Tutorial
                       </Button>
@@ -188,23 +239,23 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-card/60 rounded-md">
+                  <div className="flex justify-between items-center p-3 bg-card/60 rounded-md transition-all duration-200 hover:bg-card/80">
                     <span>Profile Information</span>
-                    <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10">
+                    <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10 transition-colors duration-200">
                       <Settings className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-card/60 rounded-md">
+                  <div className="flex justify-between items-center p-3 bg-card/60 rounded-md transition-all duration-200 hover:bg-card/80">
                     <span>Change Password</span>
-                    <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10">
+                    <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10 transition-colors duration-200">
                       <Settings className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-card/60 rounded-md">
+                  <div className="flex justify-between items-center p-3 bg-card/60 rounded-md transition-all duration-200 hover:bg-card/80">
                     <span>Notification Settings</span>
-                    <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10">
+                    <Button size="sm" variant="outline" className="border-exploit-primary/30 hover:bg-exploit-primary/10 transition-colors duration-200">
                       <Settings className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
